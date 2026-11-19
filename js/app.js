@@ -1643,6 +1643,8 @@ function updateSettingsUI() {
   els.settingSnooze.value = String(state.settings.defaultSnooze);
   els.settingWakeLock.checked = Boolean(state.settings.keepAwake);
   els.settingAutoUpdate.checked = Boolean(state.settings.autoUpdateCheck);
+  const wakeRow = els.settingWakeLock.closest(".toggle-row");
+  if (wakeRow) wakeRow.hidden = nativeMode;
 
   const permission = notificationPermission();
   els.geolocationStatus.textContent =

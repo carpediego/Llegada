@@ -2613,6 +2613,69 @@ dialog::backdrop {
   text-align: center;
 }
 
+.native-permissions {
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid rgba(29, 92, 70, 0.18);
+  border-radius: 14px;
+  background: rgba(220, 247, 143, 0.22);
+}
+
+.native-permission-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.native-permission-head strong {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.native-permission-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--coral-soft);
+  color: #a64028;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.native-permission-badge.is-ok {
+  background: var(--lime);
+  color: var(--green-deep);
+}
+
+.native-permissions > p {
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-size: 9.5px;
+  line-height: 1.55;
+}
+
+.native-permission-actions {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.native-permission-actions .button {
+  min-height: 36px;
+  justify-content: flex-start;
+  font-size: 9.5px;
+}
+
+.native-permission-actions .button:disabled {
+  opacity: 0.48;
+}
+
+.native-permission-actions .button .icon {
+  width: 14px;
+  height: 14px;
+}
+
 /* ---------- Updater ---------- */
 
 .update-card {
