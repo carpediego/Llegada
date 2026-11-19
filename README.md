@@ -2,7 +2,7 @@
 
 **Recordatorios que te encuentran, no al revés.**
 
-Llegada es una app web instalable (PWA) que lanza recordatorios cuando entras o sales de un lugar. Tú eliges el radio, el tiempo de espera y qué hacer cuando suena: completarlo o posponerlo como una alarma.
+Llegada es una app web instalable (PWA) **pensada para el celular**. Lanza recordatorios cuando entras o sales de un lugar. Tú eliges el radio, el tiempo de espera y qué hacer cuando suena: completarlo o posponerlo como una alarma.
 
 La app se publica en GitHub Pages y se actualiza desde GitHub sin pasar por una tienda.
 
