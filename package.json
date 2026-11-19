@@ -1,0 +1,21 @@
+{
+  "name": "llegada",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Recordatorios por ubicación con geocercas, retardo, alarma y actualizaciones desde GitHub.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/build.mjs && node server.js",
+    "serve": "node server.js",
+    "release:patch": "npm version patch --no-git-tag-version && node scripts/build.mjs",
+    "release:minor": "npm version minor --no-git-tag-version && node scripts/build.mjs",
+    "release:major": "npm version major --no-git-tag-version && node scripts/build.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.6.1"
+  }
+}

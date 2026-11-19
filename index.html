@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Llegada · Recordatorios por lugar</title>
+  <meta name="description" content="Recordatorios que se activan cuando llegas o sales de un lugar. Radio configurable, aviso con retardo y posponer como una alarma.">
+  <meta name="theme-color" content="#153f31">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Llegada">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-radar" viewBox="0 0 24 24">
+      <path d="M12 12 19.5 4.5"/><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7a5 5 0 1 0 5 5"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.55-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06A2 2 0 1 1 7.08 4.2l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>
+    </symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </symbol>
+    <symbol id="i-bell-off" viewBox="0 0 24 24">
+      <path d="M8.7 3A6 6 0 0 1 18 8a21 21 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a6 6 0 0 1 .4-2.1"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="m2 2 20 20"/>
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24">
+      <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.6"/>
+    </symbol>
+    <symbol id="i-navigation" viewBox="0 0 24 24"><path d="m3 11 19-9-9 19-2-8-8-2Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24">
+      <path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 23-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+    </symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    </symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24">
+      <path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+    </symbol>
+    <symbol id="i-vibrate" viewBox="0 0 24 24">
+      <rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6"/><path d="M10 11v6M14 11v6"/>
+    </symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>
+    </symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.8 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15M15 6v15"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24">
+      <circle cx="13" cy="4" r="2"/><path d="m10 22 2-6-2-4 3-3 2 5 4 2"/><path d="m8 14-2 3M7 9l4 1"/>
+    </symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24">
+      <path d="m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3Z"/><path d="m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z"/><path d="m5 14 .8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14Z"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 10v4"/><path d="M5 10v4M8 10v4M11 10v4"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Llegada, inicio">
+        <span class="brand-mark"><svg class="icon"><use href="#i-radar"/></svg></span>
+        <span class="brand-word">Llegada</span>
+      </a>
+
+      <div class="topbar-actions">
+        <button class="tracking-pill" id="tracking-pill" type="button" aria-pressed="false" title="Activar o pausar la vigilancia de ubicación">
+          <span class="tracking-pulse" aria-hidden="true"></span>
+          <span id="tracking-label">Ubicación apagada</span>
+          <svg class="icon tracking-power"><use href="#i-power"/></svg>
+        </button>
+        <button class="icon-button" id="notification-button" type="button" aria-label="Estado de las notificaciones" title="Notificaciones">
+          <svg class="icon"><use href="#i-bell"/></svg>
+          <span class="notification-dot" id="notification-dot" hidden></span>
+        </button>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Ajustes" title="Ajustes">
+          <svg class="icon"><use href="#i-settings"/></svg>
+          <span class="notification-dot update-dot" id="update-dot" hidden></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-line"></span>Recordatorios por ubicación</p>
+          <h1>Llega. Y te lo<br><em>recuerdo.</em></h1>
+          <p class="hero-sub">Un aviso en el momento justo, cuando entras o sales de un lugar. Tú eliges el radio y cuánto esperar.</p>
+          <div class="hero-actions">
+            <button class="button button--primary" id="new-reminder-button" type="button">
+              <svg class="icon"><use href="#i-plus"/></svg>
+              Nuevo recordatorio
+            </button>
+            <span class="hero-hint"><svg class="icon"><use href="#i-shield"/></svg>Todo se queda en tu dispositivo</span>
+          </div>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit-ring orbit-ring--1"></div>
+          <div class="orbit-ring orbit-ring--2"></div>
+          <div class="orbit-dot"></div>
+          <div class="orbit-card orbit-card--one">
+            <svg class="icon"><use href="#i-pin"/></svg>
+            <span>Casa</span>
+          </div>
+          <div class="orbit-card orbit-card--two">
+            <svg class="icon"><use href="#i-bell"/></svg>
+            <span>+10 min</span>
+          </div>
+          <div class="orbit-core"><svg class="icon"><use href="#i-radar"/></svg></div>
+        </div>
+      </section>
+
+      <div class="permission-banner" id="permission-banner" hidden>
+        <span class="permission-banner-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+        <div>
+          <strong>No te pierdas ningún aviso</strong>
+          <p>Activa las notificaciones para que Llegada pueda avisarte incluso si estás en otra pestaña.</p>
+        </div>
+        <button class="button button--small button--dark" id="enable-notifications" type="button">Activar</button>
+        <button class="icon-button icon-button--small" id="dismiss-notifications" type="button" aria-label="Cerrar aviso">
+          <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+      </div>
+
+      <div class="workspace">
+        <section class="panel reminders-panel" aria-labelledby="places-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Tu radar</p>
+              <h2 id="places-title">Lugares</h2>
+            </div>
+            <span class="count-badge" id="reminder-count">0</span>
+          </div>
+
+          <div class="filter-tabs" role="tablist" aria-label="Filtrar recordatorios">
+            <button class="filter-tab is-active" role="tab" aria-selected="true" data-filter="all" type="button">Todos</button>
+            <button class="filter-tab" role="tab" aria-selected="false" data-filter="active" type="button">Activos</button>
+            <button class="filter-tab" role="tab" aria-selected="false" data-filter="paused" type="button">Pausados</button>
+          </div>
+
+          <div class="reminder-list" id="reminder-list"></div>
+
+          <div class="empty-state" id="empty-state">
+            <div class="empty-radar" aria-hidden="true">
+              <span class="empty-ring empty-ring--1"></span>
+              <span class="empty-ring empty-ring--2"></span>
+              <span class="empty-ring empty-ring--3"></span>
+              <span class="empty-pin"><svg class="icon"><use href="#i-pin"/></svg></span>
+            </div>
+            <h3>Tu primer aviso te espera</h3>
+            <p>Elige un lugar, define un radio y deja que Llegada te recuerde lo importante justo al llegar.</p>
+            <button class="button button--primary button--small" type="button" data-open-new>
+              <svg class="icon"><use href="#i-plus"/></svg>Crear mi primer recordatorio
+            </button>
+            <div class="suggestions" aria-label="Ideas para empezar">
+              <button class="suggestion" type="button" data-suggestion="Regar las plantas" data-place="Casa">
+                <svg class="icon"><use href="#i-walk"/></svg>Al llegar a casa
+              </button>
+              <button class="suggestion" type="button" data-suggestion="Revisar pendientes" data-place="Oficina">
+                <svg class="icon"><use href="#i-walk"/></svg>Al llegar a la oficina
+              </button>
+              <button class="suggestion" type="button" data-suggestion="Estirar 10 minutos" data-place="Gimnasio">
+                <svg class="icon"><use href="#i-walk"/></svg>Al llegar al gym
+              </button>
+            </div>
+          </div>
+
+          <div class="list-footer">
+            <span class="privacy-note"><svg class="icon"><use href="#i-lock"/></svg>Ubicación privada, sin cuentas ni servidores.</span>
+          </div>
+        </section>
+
+        <aside class="panel map-panel" aria-label="Mapa de tus recordatorios">
+          <div class="map-canvas" id="dashboard-map"></div>
+          <div class="map-vignette" aria-hidden="true"></div>
+          <div class="map-topbar">
+            <span class="map-label"><span class="map-label-dot"></span>Mapa en vivo</span>
+            <button class="map-control" id="map-locate" type="button" aria-label="Centrar el mapa en mi ubicación" title="Centrar en mi ubicación">
+              <svg class="icon"><use href="#i-locate"/></svg>
+            </button>
+          </div>
+          <div class="map-placeholder" id="map-placeholder">
+            <span class="map-placeholder-icon"><svg class="icon"><use href="#i-map"/></svg></span>
+            <strong>Tu radar está en pausa</strong>
+            <p>Activa la ubicación para ver dónde estás y tus zonas de aviso.</p>
+            <button class="button button--light button--small" id="map-activate" type="button">
+              <svg class="icon"><use href="#i-locate"/></svg>Activar ubicación
+            </button>
+          </div>
+          <div class="map-footer">
+            <div class="gps-card" id="gps-card">
+              <span class="gps-indicator is-off" id="gps-indicator"></span>
+              <div class="gps-copy">
+                <strong id="gps-title">Ubicación apagada</strong>
+                <span id="gps-subtitle">Actívala para empezar</span>
+              </div>
+              <button class="gps-action" id="gps-action" type="button">Activar</button>
+            </div>
+            <div class="map-legend">
+              <span><i class="legend-dot legend-dot--you"></i>Tú</span>
+              <span><i class="legend-ring"></i>Zona de aviso</span>
+              <span class="accuracy-label" id="accuracy-label"></span>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="how-it-works" aria-label="Cómo funciona">
+        <div class="how-intro">
+          <p class="eyebrow">Así de simple</p>
+          <h2>Tu día, con<br><em>memoria.</em></h2>
+        </div>
+        <ol class="how-steps">
+          <li>
+            <span class="step-number">01</span>
+            <span class="step-icon"><svg class="icon"><use href="#i-pin"/></svg></span>
+            <h3>Marca el lugar</h3>
+            <p>Busca una dirección, toca el mapa o usa tu ubicación actual.</p>
+          </li>
+          <li>
+            <span class="step-number">02</span>
+            <span class="step-icon"><svg class="icon"><use href="#i-clock"/></svg></span>
+            <h3>Ajusta el tiempo</h3>
+            <p>Aviso al instante o unos minutos después de llegar. Con radio para evitar falsos avisos.</p>
+          </li>
+          <li>
+            <span class="step-number">03</span>
+            <span class="step-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+            <h3>Recibe y pospone</h3>
+            <p>Alarma con sonido, notificación y opción de posponer como tu despertador.</p>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-brand"><span class="brand-mark brand-mark--small"><svg class="icon"><use href="#i-radar"/></svg></span>Llegada</div>
+      <p>Recordatorios que te encuentran, no al revés.</p>
+      <button class="text-button" id="footer-privacy" type="button">Privacidad y límites</button>
+    </footer>
+  </div>
+
+  <dialog class="sheet reminder-dialog" id="reminder-dialog" aria-labelledby="reminder-dialog-title">
+    <form id="reminder-form" novalidate>
+      <header class="sheet-header">
+        <div>
+          <p class="eyebrow" id="reminder-dialog-eyebrow">Nuevo recordatorio</p>
+          <h2 id="reminder-dialog-title">¿Qué te recuerdo?</h2>
+        </div>
+        <button class="icon-button sheet-close" type="button" data-close-dialog aria-label="Cerrar">
+          <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+      </header>
+
+      <div class="sheet-body">
+        <section class="form-section form-section--title">
+          <label class="field-label" for="field-title">Tu recordatorio</label>
+          <input class="text-input text-input--title" id="field-title" name="title" type="text" maxlength="80" required placeholder="Ej. Regar las plantas" autocomplete="off">
+          <textarea class="text-input text-input--note" id="field-note" name="note" maxlength="240" rows="2" placeholder="Una nota breve (opcional)"></textarea>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">01 · El lugar</span>
+              <h3>¿Dónde te aviso?</h3>
+            </div>
+            <span class="radius-pill" id="radius-pill">150 m</span>
+          </div>
+
+          <div class="place-search">
+            <svg class="icon place-search-icon"><use href="#i-search"/></svg>
+            <input id="place-search" type="search" placeholder="Buscar dirección o lugar…" autocomplete="off" aria-label="Buscar dirección o lugar">
+            <button class="button button--small button--quiet" id="place-search-button" type="button">Buscar</button>
+            <div class="search-results" id="search-results" role="listbox" hidden></div>
+          </div>
+
+          <div class="picker-map-wrap">
+            <div class="picker-map" id="picker-map"></div>
+            <button class="picker-locate" id="use-current-location" type="button">
+              <svg class="icon"><use href="#i-locate"/></svg>Usar mi ubicación
+            </button>
+            <div class="picker-map-hint"><svg class="icon"><use href="#i-pin"/></svg>Toca el mapa para mover el punto</div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span class="field-label">Nombre del lugar</span>
+              <input class="text-input" id="field-place" name="placeName" type="text" maxlength="60" placeholder="Casa, oficina, gym…" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label field-label--split">Radio de aviso <output id="radius-output" for="field-radius">150 m</output></span>
+              <input class="range" id="field-radius" name="radius" type="range" min="30" max="1000" step="10" value="150">
+            </label>
+          </div>
+          <p class="coords-line" id="coords-line">Sin ubicación elegida aún.</p>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">02 · El momento</span>
+              <h3>¿Cuándo te aviso?</h3>
+            </div>
+          </div>
+
+          <div class="segmented segmented--wide" role="radiogroup" aria-label="Tipo de aviso">
+            <label class="segment">
+              <input type="radio" name="trigger" value="enter" checked>
+              <span><svg class="icon"><use href="#i-navigation"/></svg>Al llegar</span>
+            </label>
+            <label class="segment">
+              <input type="radio" name="trigger" value="exit">
+              <span><svg class="icon"><use href="#i-arrow-right"/></svg>Al salir</span>
+            </label>
+          </div>
+
+          <div class="delay-head">
+            <span class="field-label">Esperar antes de avisar</span>
+            <span class="delay-readout" id="delay-readout">Al instante</span>
+          </div>
+          <div class="delay-presets" id="delay-presets">
+            <button class="delay-chip is-active" type="button" data-delay="0">Ahora</button>
+            <button class="delay-chip" type="button" data-delay="2">2 min</button>
+            <button class="delay-chip" type="button" data-delay="5">5 min</button>
+            <button class="delay-chip" type="button" data-delay="10">10 min</button>
+            <button class="delay-chip" type="button" data-delay="15">15 min</button>
+            <button class="delay-chip delay-chip--custom" type="button" data-delay="custom">Otro</button>
+            <label class="delay-custom" id="delay-custom-wrap" hidden>
+              <input id="field-delay" name="delayMin" type="number" min="0" max="180" step="1" value="0" inputmode="numeric">
+              <span>min</span>
+            </label>
+          </div>
+          <p class="helper" id="delay-helper">El aviso se lanza en cuanto entras en el radio.</p>
+        </section>
+
+        <details class="advanced" id="advanced-settings">
+          <summary>
+            <span><svg class="icon"><use href="#i-settings"/></svg>Ajustes finos</span>
+            <svg class="icon advanced-chevron"><use href="#i-chevron-down"/></svg>
+          </summary>
+          <div class="advanced-body">
+            <div class="toggle-row">
+              <div>
+                <strong>Repetir cada vez</strong>
+                <p>Vuelve a avisarte en cada nueva llegada, no solo una vez.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="field-repeat">
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+            <div class="toggle-row" id="require-stay-row">
+              <div>
+                <strong>Cancelar si me voy antes</strong>
+                <p>Si sales del radio durante la espera, el aviso se cancela.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="field-require-stay" checked>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <strong>Sonido de alarma</strong>
+                <p>Reproduce un tono mientras la alarma está en pantalla.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="field-sound" checked>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <strong>Vibración</strong>
+                <p>Vibra al sonar el aviso, si tu dispositivo lo permite.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="field-vibrate" checked>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </details>
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+      </div>
+
+      <footer class="sheet-footer">
+        <button class="button button--danger button--quiet" id="delete-reminder" type="button" hidden>
+          <svg class="icon"><use href="#i-trash"/></svg>Eliminar
+        </button>
+        <div class="sheet-footer-actions">
+          <button class="button button--ghost" type="button" data-close-dialog>Cancelar</button>
+          <button class="button button--primary" id="save-reminder" type="submit">
+            <svg class="icon"><use href="#i-check"/></svg><span id="save-reminder-label">Guardar recordatorio</span>
+          </button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="sheet settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+    <header class="sheet-header">
+      <div>
+        <p class="eyebrow">Tu configuración</p>
+        <h2 id="settings-title">Ajustes</h2>
+      </div>
+      <button class="icon-button sheet-close" type="button" data-close-dialog aria-label="Cerrar">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="sheet-body settings-body">
+      <section class="settings-section">
+        <div class="settings-heading">
+          <span class="settings-icon"><svg class="icon"><use href="#i-bell"/></svg></span>
+          <div><h3>Alarmas</h3><p>Cómo quieres que te avise.</p></div>
+        </div>
+        <label class="select-row">
+          <span><strong>Posponer por defecto</strong><small>Tiempo sugerido al posponer una alarma.</small></span>
+          <select id="setting-snooze">
+            <option value="5">5 min</option>
+            <option value="10" selected>10 min</option>
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="60">1 hora</option>
+          </select>
+        </label>
+        <div class="toggle-row">
+          <div><strong>Mantener pantalla encendida</strong><p>Ayuda a que la ubicación siga activa mientras vigilas. Consume más batería.</p></div>
+          <label class="switch">
+            <input type="checkbox" id="setting-wake-lock" checked>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-heading">
+          <span class="settings-icon"><svg class="icon"><use href="#i-locate"/></svg></span>
+          <div><h3>Ubicación y notificaciones</h3><p>Permisos del navegador.</p></div>
+        </div>
+        <div class="permission-row">
+          <span class="permission-status" id="geolocation-status">Ubicación: sin activar</span>
+          <span class="permission-status" id="notifications-status">Notificaciones: sin permiso</span>
+        </div>
+        <button class="button button--outline button--full" id="settings-notifications" type="button">
+          <svg class="icon"><use href="#i-bell"/></svg><span>Activar notificaciones</span>
+        </button>
+        <button class="button button--outline button--full" id="install-button" type="button" hidden>
+          <svg class="icon"><use href="#i-download"/></svg>Instalar Llegada
+        </button>
+        <p class="helper">La app usa tu GPS solo mientras está abierta. Para avisos con la pantalla apagada o la app cerrada, necesitas una app nativa. <button class="inline-link" id="limits-button" type="button">Ver límites</button></p>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-heading">
+          <span class="settings-icon"><svg class="icon"><use href="#i-refresh"/></svg></span>
+          <div><h3>Actualizaciones</h3><p>Publicadas desde GitHub.</p></div>
+        </div>
+        <div class="update-card">
+          <div class="update-version-row">
+            <div>
+              <span>Versión instalada</span>
+              <strong id="current-version">—</strong>
+            </div>
+            <a class="update-repo-link" id="github-link" href="#" target="_blank" rel="noopener noreferrer">
+              GitHub <svg class="icon"><use href="#i-chevron-right"/></svg>
+            </a>
+          </div>
+          <p class="update-status" id="update-status">Pulsa buscar para revisar si hay una versión nueva.</p>
+          <div class="update-actions">
+            <button class="button button--outline button--small" id="check-updates" type="button">
+              <svg class="icon"><use href="#i-search"/></svg><span>Buscar actualizaciones</span>
+            </button>
+            <button class="button button--light-outline button--small" id="show-update" type="button" hidden>
+              <svg class="icon"><use href="#i-download"/></svg>Ver actualización
+            </button>
+            <button class="button button--quiet button--small" id="download-package" type="button" hidden>
+              <svg class="icon"><use href="#i-download"/></svg>Descargar .zip
+            </button>
+          </div>
+        </div>
+        <div class="toggle-row update-toggle">
+          <div><strong>Buscar al abrir</strong><p>Comprueba GitHub como máximo una vez cada 6 horas.</p></div>
+          <label class="switch">
+            <input type="checkbox" id="setting-auto-update" checked>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </label>
+        </div>
+        <p class="helper">Las actualizaciones llegan como un paquete verificado archivo por archivo con SHA-256, se guardan en tu dispositivo y se activan sin pasar por una tienda. <button class="inline-link" id="update-help-button" type="button">Cómo funciona</button></p>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-heading">
+          <span class="settings-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
+          <div><h3>Tus datos</h3><p>Sin cuentas. Todo local.</p></div>
+        </div>
+        <div class="settings-actions">
+          <button class="button button--outline button--small" id="export-button" type="button"><svg class="icon"><use href="#i-download"/></svg>Exportar</button>
+          <button class="button button--outline button--small" id="import-button" type="button"><svg class="icon"><use href="#i-upload"/></svg>Importar</button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+        <button class="button button--danger button--quiet button--full" id="clear-data" type="button">
+          <svg class="icon"><use href="#i-trash"/></svg>Borrar todos los recordatorios
+        </button>
+      </section>
+
+      <p class="settings-version">Llegada · v1.0 · Hecha para tu día a día</p>
+    </div>
+  </dialog>
+
+  <dialog class="alarm-dialog" id="alarm-dialog" aria-labelledby="alarm-title">
+    <div class="alarm-visual" aria-hidden="true">
+      <span class="alarm-ring alarm-ring--1"></span>
+      <span class="alarm-ring alarm-ring--2"></span>
+      <span class="alarm-ring alarm-ring--3"></span>
+      <span class="alarm-ring alarm-ring--4"></span>
+    </div>
+    <div class="alarm-content">
+      <div class="alarm-bell" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></div>
+      <p class="alarm-eyebrow"><span class="alarm-live-dot"></span>Recordatorio por ubicación</p>
+      <h2 id="alarm-title">Llegaste a casa</h2>
+      <p class="alarm-place" id="alarm-place">Casa · 150 m</p>
+      <p class="alarm-note" id="alarm-note" hidden></p>
+      <p class="alarm-time" id="alarm-time">Sonando hace 0:00</p>
+      <div class="alarm-snooze" id="alarm-snooze">
+        <span>Posponer</span>
+        <div class="snooze-options" id="snooze-options"></div>
+      </div>
+      <button class="alarm-done" id="alarm-done" type="button">
+        <svg class="icon"><use href="#i-check"/></svg>Listo, ya lo hice
+      </button>
+      <button class="alarm-test-close" id="alarm-test-close" type="button" hidden>Cerrar prueba</button>
+    </div>
+  </dialog>
+
+  <dialog class="info-dialog" id="info-dialog" aria-labelledby="info-title">
+    <header class="sheet-header">
+      <div>
+        <p class="eyebrow">Antes de confiar tu día a Llegada</p>
+        <h2 id="info-title">Cómo funciona de verdad</h2>
+      </div>
+      <button class="icon-button sheet-close" type="button" data-close-dialog aria-label="Cerrar">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="sheet-body info-body">
+      <div class="info-callout">
+        <svg class="icon"><use href="#i-info"/></svg>
+        <p><strong>Importante:</strong> los navegadores no permiten usar el GPS con la app cerrada. Llegada vigila mientras está abierta (en primer plano o en una pestaña reciente) y puede mostrar notificaciones del sistema.</p>
+      </div>
+      <h3>Qué sí hace</h3>
+      <ul class="info-list">
+        <li><svg class="icon"><use href="#i-check"/></svg>Detecta entrada y salida con un radio ajustable y un margen por la precisión del GPS.</li>
+        <li><svg class="icon"><use href="#i-check"/></svg>Puede esperar X minutos antes de avisar y cancelar si sales del área.</li>
+        <li><svg class="icon"><use href="#i-check"/></svg>Alarma con sonido, vibración, notificación y posponer.</li>
+        <li><svg class="icon"><use href="#i-check"/></svg>Funciona sin conexión una vez cargada y guarda todo en tu dispositivo.</li>
+      </ul>
+      <h3>Qué no puede hacer</h3>
+      <ul class="info-list info-list--x">
+        <li><svg class="icon"><use href="#i-x"/></svg>Despertarte con la app cerrada o el teléfono bloqueado durante horas.</li>
+        <li><svg class="icon"><use href="#i-x"/></svg>Garantizar el GPS bajo techo, en sótanos o con el ahorro de batería extremo.</li>
+        <li><svg class="icon"><use href="#i-x"/></svg>Enviarte avisos si el sistema operativo suspende el navegador.</li>
+      </ul>
+      <p class="info-tip">Para una geocerca 24/7 de verdad hace falta una app nativa con permiso de ubicación en segundo plano. Este proyecto deja la base web lista para ese siguiente paso.</p>
+      <h3>Actualizaciones desde GitHub</h3>
+      <ul class="info-list">
+        <li><svg class="icon"><use href="#i-check"/></svg>La app consulta la versión publicada en GitHub Pages y el último release del repositorio.</li>
+        <li><svg class="icon"><use href="#i-check"/></svg>Al instalar, descarga el paquete completo, comprueba el SHA-256 de cada archivo y lo activa al recargar.</li>
+        <li><svg class="icon"><use href="#i-check"/></svg>También puedes descargar el .zip y guardarlo como copia o para publicarlo en otro sitio.</li>
+      </ul>
+    </div>
+    <footer class="sheet-footer">
+      <div></div>
+      <button class="button button--primary" type="button" data-close-dialog>Entendido</button>
+    </footer>
+  </dialog>
+
+  <dialog class="sheet update-dialog" id="update-dialog" aria-labelledby="update-title">
+    <header class="sheet-header">
+      <div>
+        <p class="eyebrow"><span class="update-live-dot"></span>Nueva versión desde GitHub</p>
+        <h2 id="update-title">Actualización disponible</h2>
+      </div>
+      <button class="icon-button sheet-close" type="button" data-close-dialog aria-label="Cerrar">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="sheet-body update-body">
+      <div class="update-versions">
+        <div class="update-version-box">
+          <span>Ahora</span>
+          <strong id="update-from-version">1.0.0</strong>
+        </div>
+        <svg class="icon update-arrow"><use href="#i-arrow-right"/></svg>
+        <div class="update-version-box update-version-box--new">
+          <span>Nueva</span>
+          <strong id="update-to-version">1.0.1</strong>
+        </div>
+        <div class="update-meta">
+          <span id="update-size">—</span>
+          <span id="update-date">—</span>
+        </div>
+      </div>
+
+      <div class="update-notes">
+        <h3>Qué cambia</h3>
+        <ul id="update-notes-list"></ul>
+        <p id="update-notes-empty" hidden>Esta versión incluye mejoras y correcciones.</p>
+      </div>
+
+      <div class="install-progress" id="install-progress" hidden>
+        <div class="install-progress-head">
+          <span id="install-progress-label">Preparando instalación…</span>
+          <strong id="install-progress-percent">0%</strong>
+        </div>
+        <div class="progress-track"><span id="install-progress-bar"></span></div>
+        <p id="install-progress-detail">Descargando paquete…</p>
+      </div>
+
+      <div class="update-integrity">
+        <svg class="icon"><use href="#i-shield"/></svg>
+        <p>El paquete se verifica archivo por archivo con SHA-256 antes de instalarse. Si algo no coincide, la actualización se cancela.</p>
+      </div>
+
+      <p class="update-error" id="update-error" role="alert" hidden></p>
+    </div>
+    <footer class="sheet-footer update-footer">
+      <div class="update-footer-links">
+        <a class="text-button" id="release-link" href="#" target="_blank" rel="noopener noreferrer">Ver release en GitHub</a>
+        <button class="text-button" id="download-package-dialog" type="button">Descargar .zip</button>
+      </div>
+      <div class="sheet-footer-actions">
+        <button class="button button--ghost" type="button" data-close-dialog>Más tarde</button>
+        <button class="button button--primary" id="install-update" type="button">
+          <svg class="icon"><use href="#i-download"/></svg><span>Descargar e instalar</span>
+        </button>
+      </div>
+    </footer>
+  </dialog>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <noscript>
+    <div class="noscript">Llegada necesita JavaScript para usar tu ubicación y programar recordatorios.</div>
+  </noscript>
+
+  <script src="vendor/leaflet/leaflet.js" defer></script>
+  <script src="build-info.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
