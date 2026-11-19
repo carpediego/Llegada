@@ -3893,3 +3893,818 @@ dialog::backdrop {
     transition-duration: 0.01ms !important;
   }
 }
+/* =========================================================
+   Mobile app shell
+   The interface is designed for the Android WebView first.
+   ========================================================= */
+
+html,
+body {
+  background: #e9e2d5;
+}
+
+body {
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(200, 239, 107, 0.18), transparent 18rem),
+    var(--paper);
+  box-shadow: 0 0 80px rgba(23, 37, 31, 0.12);
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    box-shadow: none;
+  }
+}
+
+.topbar {
+  min-height: 60px;
+  padding: calc(10px + var(--safe-top)) 16px 8px;
+  background: rgba(243, 239, 229, 0.94);
+  border-bottom: 1px solid rgba(23, 37, 31, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  gap: 9px;
+  font-size: 18px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  box-shadow: 0 5px 14px rgba(20, 63, 49, 0.2);
+}
+
+.brand-mark .icon {
+  width: 19px;
+  height: 19px;
+}
+
+.brand-word {
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+.topbar-actions .icon-button {
+  width: 38px;
+  height: 38px;
+  background: var(--surface);
+}
+
+.topbar-actions .icon-button .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.main {
+  padding: 0 16px calc(112px + var(--safe-bottom));
+}
+
+.view[hidden] {
+  display: none !important;
+}
+
+.home-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 2px 14px;
+}
+
+.home-head h1 {
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1.04;
+}
+
+.home-head .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.home-head .count-badge {
+  min-width: 39px;
+  height: 39px;
+  margin-top: 6px;
+  border-color: rgba(23, 37, 31, 0.08);
+  background: var(--surface);
+  color: var(--green);
+  font-size: 13px;
+}
+
+.home-head--map {
+  padding-top: 16px;
+  padding-bottom: 10px;
+}
+
+.home-head--map h1 {
+  font-size: 25px;
+}
+
+/* ---------- Native-ish status card ---------- */
+
+.status-card {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 14px;
+  padding: 17px 17px 16px;
+  border-radius: 25px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(220, 247, 143, 0.18), transparent 11rem),
+    linear-gradient(145deg, #1a513e 0%, #103528 100%);
+  color: #f8f4e8;
+  box-shadow: 0 16px 35px rgba(15, 46, 36, 0.2);
+}
+
+.status-card::before,
+.status-card::after {
+  position: absolute;
+  content: "";
+  border: 1px solid rgba(220, 247, 143, 0.13);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.status-card::before {
+  top: -88px;
+  right: -52px;
+  width: 230px;
+  height: 230px;
+}
+
+.status-card::after {
+  top: -48px;
+  right: -12px;
+  width: 150px;
+  height: 150px;
+}
+
+.status-card-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-card-kicker {
+  color: rgba(220, 247, 143, 0.82);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.home-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(248, 244, 232, 0.42);
+}
+
+.home-status-dot.is-active {
+  background: var(--lime);
+  box-shadow: 0 0 0 3px rgba(220, 247, 143, 0.13);
+}
+
+.home-status-dot.is-weak {
+  background: #e6b553;
+  box-shadow: 0 0 0 3px rgba(230, 181, 83, 0.14);
+}
+
+.home-status-dot.is-error {
+  background: var(--coral);
+  box-shadow: 0 0 0 3px rgba(244, 123, 92, 0.15);
+}
+
+.home-status-dot.is-off {
+  background: rgba(248, 244, 232, 0.38);
+}
+
+.status-card h2 {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  font-family: var(--font-ui);
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.status-card > p {
+  position: relative;
+  z-index: 1;
+  max-width: 290px;
+  margin-top: 4px;
+  color: rgba(248, 244, 232, 0.58);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.status-card .tracking-pill {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 38px;
+  margin-top: 15px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--green-deep);
+  font-size: 10.5px;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.13);
+}
+
+.status-card .tracking-pill.is-active {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8f4e8;
+  box-shadow: none;
+}
+
+.status-card .tracking-pill:hover {
+  transform: translateY(-1px);
+}
+
+.status-card .tracking-pulse {
+  width: 7px;
+  height: 7px;
+  background: var(--green-deep);
+}
+
+.status-card .tracking-pill.is-active .tracking-pulse {
+  background: var(--lime);
+  box-shadow: none;
+}
+
+.status-card .tracking-power {
+  width: 13px;
+  height: 13px;
+  opacity: 0.58;
+}
+
+/* ---------- Permission banner ---------- */
+
+.permission-banner {
+  gap: 10px;
+  margin: 0 0 15px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(220, 247, 143, 0.28);
+}
+
+.permission-banner-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.permission-banner-icon .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.permission-banner strong {
+  font-size: 10.5px;
+}
+
+.permission-banner p {
+  font-size: 9.5px;
+}
+
+.permission-banner .button {
+  min-height: 32px;
+  padding: 0 11px;
+  font-size: 9.5px;
+}
+
+/* ---------- Section and filters ---------- */
+
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 2px 9px;
+}
+
+.section-row h2 {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.section-hint {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.filter-tab {
+  flex: 0 0 auto;
+  min-width: 66px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 750;
+  box-shadow: none;
+}
+
+.filter-tab.is-active {
+  border-color: var(--green-deep);
+  background: var(--green-deep);
+  color: var(--surface);
+  box-shadow: none;
+}
+
+/* ---------- Reminder cards ---------- */
+
+.reminder-list {
+  gap: 9px;
+}
+
+.reminder-card {
+  gap: 2px 10px;
+  padding: 13px 13px 12px;
+  border: 1px solid rgba(23, 37, 31, 0.08);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow: 0 5px 16px rgba(32, 51, 42, 0.045);
+  animation: none;
+}
+
+.reminder-card:hover {
+  border-color: rgba(23, 37, 31, 0.14);
+  background: var(--surface);
+  box-shadow: 0 7px 20px rgba(32, 51, 42, 0.07);
+  transform: none;
+}
+
+.reminder-card.is-selected {
+  border-color: rgba(29, 92, 70, 0.35);
+  background: var(--surface);
+}
+
+.reminder-card::before {
+  top: 13px;
+  bottom: 13px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+
+.place-icon {
+  width: 41px;
+  height: 41px;
+  border-radius: 13px;
+}
+
+.place-icon .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.card-place {
+  margin-top: 2px;
+  font-size: 9.5px;
+}
+
+.card-toggle {
+  width: 32px;
+  height: 32px;
+  margin-top: -2px;
+}
+
+.reminder-card__meta {
+  gap: 4px;
+  margin: 9px 0 0;
+}
+
+.meta-chip {
+  padding: 3px 7px;
+  font-size: 8.5px;
+}
+
+.reminder-card__status {
+  gap: 6px;
+  margin: 9px 0 0;
+  font-size: 9px;
+}
+
+.status-detail {
+  font-size: 9px;
+}
+
+.card-actions {
+  margin: 9px 0 0;
+  padding-top: 8px;
+  border-top-color: rgba(23, 37, 31, 0.06);
+}
+
+.card-edit {
+  font-size: 9px;
+}
+
+.card-test {
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.card-test .icon {
+  width: 10px;
+  height: 10px;
+}
+
+/* ---------- Empty state ---------- */
+
+.empty-state {
+  padding: 30px 12px 14px;
+}
+
+.empty-radar {
+  width: 118px;
+  height: 118px;
+  margin-bottom: 15px;
+}
+
+.empty-pin {
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+}
+
+.empty-pin .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.empty-state h3 {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.empty-state > p {
+  max-width: 260px;
+  margin: 6px auto 13px;
+  font-size: 10.5px;
+}
+
+.empty-state > .button {
+  min-height: 40px;
+}
+
+.suggestions {
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.suggestion {
+  padding: 6px 9px;
+  font-size: 9px;
+  background: var(--surface);
+}
+
+.list-footer {
+  padding: 17px 2px 0;
+}
+
+.privacy-note {
+  font-size: 9px;
+}
+
+/* ---------- Map screen ---------- */
+
+.view--map {
+  padding-bottom: 2px;
+}
+
+.map-panel {
+  height: calc(100dvh - 205px);
+  min-height: 420px;
+  max-height: none;
+  margin-bottom: 10px;
+  border-radius: 25px;
+  overflow: hidden;
+}
+
+.map-canvas .leaflet-control-zoom {
+  margin-right: 12px !important;
+  margin-bottom: 104px !important;
+}
+
+.map-topbar {
+  top: 12px;
+  right: 12px;
+  left: 12px;
+}
+
+.map-footer {
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+}
+
+.gps-card {
+  padding: 9px 11px;
+  border-radius: 14px;
+}
+
+.gps-copy strong {
+  font-size: 10px;
+}
+
+.gps-copy span {
+  font-size: 8.5px;
+}
+
+.gps-action {
+  padding: 5px 9px;
+  font-size: 8.5px;
+}
+
+.map-legend {
+  font-size: 8px;
+}
+
+.map-placeholder {
+  padding: 24px;
+}
+
+.map-placeholder strong {
+  font-family: var(--font-ui);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.map-placeholder p {
+  font-size: 10px;
+}
+
+.map-placeholder .button {
+  min-height: 38px;
+  font-size: 10px;
+}
+
+/* ---------- FAB and bottom navigation ---------- */
+
+.fab {
+  position: fixed;
+  z-index: 60;
+  right: max(18px, calc(50vw - 242px));
+  bottom: calc(84px + var(--safe-bottom));
+  display: inline-flex;
+  height: 51px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green-deep);
+  color: var(--surface);
+  box-shadow: 0 12px 28px rgba(20, 63, 49, 0.28);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.fab:hover {
+  background: var(--green);
+  transform: translateY(-1px);
+}
+
+.fab .icon {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.3;
+}
+
+.fab[hidden] {
+  display: none !important;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  z-index: 55;
+  display: grid;
+  width: 100%;
+  max-width: 520px;
+  height: calc(70px + var(--safe-bottom));
+  padding: 6px 20px calc(5px + var(--safe-bottom));
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid rgba(23, 37, 31, 0.09);
+  background: rgba(255, 253, 248, 0.95);
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  min-height: 56px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #8a958e;
+  font-size: 8.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nav-item .icon {
+  width: 21px;
+  height: 21px;
+  stroke-width: 1.9;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.nav-item.is-active,
+.nav-item:active {
+  color: var(--green-deep);
+}
+
+.nav-item.is-active .icon {
+  transform: translateY(-1px);
+}
+
+.nav-item.is-active::after {
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  content: "";
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.nav-item .notification-dot {
+  top: 12px;
+  right: calc(50% - 19px);
+}
+
+.toast-stack {
+  bottom: calc(142px + var(--safe-bottom));
+  width: min(390px, calc(100% - 32px));
+}
+
+.toast {
+  border-radius: 16px;
+  padding: 9px 13px;
+  font-size: 10px;
+}
+
+/* Native settings dialog link */
+
+.settings-privacy-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 2px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-privacy-link .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--green);
+}
+
+.settings-privacy-link:hover {
+  color: var(--green);
+}
+
+/* ---------- Small phones ---------- */
+
+@media (max-width: 380px) {
+  .main {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .topbar {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .home-head h1 {
+    font-size: 26px;
+  }
+
+  .status-card {
+    padding: 15px;
+  }
+
+  .status-card h2 {
+    font-size: 21px;
+  }
+
+  .bottom-nav {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .map-panel {
+    height: calc(100dvh - 196px);
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 700px) {
+  .sheet {
+    max-width: 100vw;
+  }
+}
+
+
+/* Unify native typography */
+.sheet-header h2 {
+  font-family: var(--font-ui);
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.section-heading h3 {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.alarm-content h2 {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.info-body h3 {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.settings-version {
+  font-size: 8.5px;
+}

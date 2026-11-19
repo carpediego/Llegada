@@ -92,6 +92,15 @@ let wakeLock = null;
 const els = {
   trackingPill: $("#tracking-pill"),
   trackingLabel: $("#tracking-label"),
+  homeStatusTitle: $("#home-status-title"),
+  homeStatusSub: $("#home-status-sub"),
+  homeStatusDot: $("#home-status-dot"),
+  homeStatusKicker: $("#home-status-kicker"),
+  todayLabel: $("#today-label"),
+  viewHome: $("#view-home"),
+  viewMap: $("#view-map"),
+  navHome: $("#nav-home"),
+  navMap: $("#nav-map"),
   notificationButton: $("#notification-button"),
   notificationDot: $("#notification-dot"),
   settingsButton: $("#settings-button"),
@@ -210,6 +219,8 @@ async function init() {
   setBuildInfo();
   repairState();
   bindEvents();
+  updateTodayLabel();
+  showView("home");
   updateSettingsUI();
   updateNotificationUI();
   renderReminders();
@@ -357,6 +368,9 @@ function bindEvents() {
       renderReminders();
     });
   });
+
+  els.navHome.addEventListener("click", () => showView("home"));
+  els.navMap.addEventListener("click", () => showView("map"));
 
   els.reminderList.addEventListener("click", (event) => {
     const card = event.target.closest(".reminder-card");
@@ -614,8 +628,33 @@ function bindEvents() {
   }
 }
 
-async function setupDashboardMap() {
-  const ready = await waitForLeaflet();
+function showView(view) {
+  const isMap = view === "map";
+  if (els.viewHome) els.viewHome.hidden = isMap;
+  if (els.viewMap) els.viewMap.hidden = !isMap;
+  els.navHome?.classList.toggle("is-active", !isMap);
+  els.navMap?.classList.toggle("is-active", isMap);
+  els.navHome?.setAttribute("aria-current", isMap ? "false" : "page");
+  els.navMap?.setAttribute("aria-current", isMap ? "page" : "false");
+  els.newReminderButton.hidden = isMap;
+  if (isMap) {
+    window.setTimeout(() => {
+      ui.dashboardMap?.invalidateSize();
+    }, 80);
+  }
+}
+
+function updateTodayLabel() {
+  if (!els.todayLabel) return;
+  const formatted = new Intl.DateTimeFormat("es", {
+    weekday: "long",
+    day: "numeric",
+    month: "short"
+  }).format(new Date());
+  els.todayLabel.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+async function setupDashboardMap() {  const ready = await waitForLeaflet();
   if (!ready) {
     els.mapPlaceholder.hidden = false;
     $("strong", els.mapPlaceholder).textContent = "El mapa no cargó";
@@ -808,7 +847,7 @@ function reminderCardMarkup(reminder, index) {
       </div>
       <div class="card-actions">
         <button class="card-edit" type="button" data-edit><svg class="icon"><use href="#i-pencil"/></svg>Editar</button>
-        <button class="card-test" type="button" data-test><svg class="icon"><use href="#i-play"/></svg>Probar alarma</button>
+        <button class="card-test" type="button" data-test aria-label="Probar alarma" title="Probar alarma"><svg class="icon"><use href="#i-play"/></svg></button>
       </div>
     </article>
   `;
@@ -1080,15 +1119,42 @@ function updateGpsUI() {
 
   els.trackingPill.classList.toggle("is-active", enabled);
   els.trackingPill.setAttribute("aria-pressed", String(enabled));
-  const compactLabel = window.matchMedia("(max-width: 430px)").matches;
+  if (els.homeStatusDot) {
+    els.homeStatusDot.className = "home-status-dot";
+  }
   if (!enabled) {
-    els.trackingLabel.textContent = compactLabel ? "Apagada" : "Ubicación apagada";
-  } else if (status === "starting") {
-    els.trackingLabel.textContent = compactLabel ? "Conectando" : "Conectando…";
+    els.trackingLabel.textContent = "Activar";
+    if (els.homeStatusTitle) els.homeStatusTitle.textContent = "Ubicación apagada";
+    if (els.homeStatusSub) els.homeStatusSub.textContent = "Actívala para empezar a vigilar tus lugares.";
+    if (els.homeStatusKicker) els.homeStatusKicker.textContent = "GPS inactivo";
+    els.homeStatusDot?.classList.add("is-off");
+  } else if (status === "starting" || (!position && status !== "error")) {
+    els.trackingLabel.textContent = "Conectando…";
+    if (els.homeStatusTitle) els.homeStatusTitle.textContent = "Buscando tu ubicación…";
+    if (els.homeStatusSub) els.homeStatusSub.textContent = "Acepta el permiso si aparece.";
+    if (els.homeStatusKicker) els.homeStatusKicker.textContent = "Conectando";
+    els.homeStatusDot?.classList.add("is-active");
   } else if (status === "error") {
-    els.trackingLabel.textContent = compactLabel ? "Sin señal" : "Sin señal";
+    els.trackingLabel.textContent = "Reintentar";
+    if (els.homeStatusTitle) els.homeStatusTitle.textContent = "Sin señal de ubicación";
+    if (els.homeStatusSub) els.homeStatusSub.textContent = ui.trackerError || "Comprueba el GPS y vuelve a intentarlo.";
+    if (els.homeStatusKicker) els.homeStatusKicker.textContent = "GPS";
+    els.homeStatusDot?.classList.add("is-error");
   } else {
-    els.trackingLabel.textContent = compactLabel ? "Activa" : "Vigilancia activa";
+    els.trackingLabel.textContent = "Pausar";
+    if (els.homeStatusTitle) {
+      els.homeStatusTitle.textContent =
+        activeCount > 0 ? `Vigilando ${activeCount} ${activeCount === 1 ? "lugar" : "lugares"}` : "Vigilancia activa";
+    }
+    if (els.homeStatusSub) {
+      els.homeStatusSub.textContent = position
+        ? `${formatAccuracy(position.accuracy)} · ${positionAgeLabel(position.timestamp)}`
+        : "Esperando señal del GPS.";
+    }
+    if (els.homeStatusKicker) {
+      els.homeStatusKicker.textContent = status === "weak" ? "Señal débil" : "GPS activo";
+    }
+    els.homeStatusDot?.classList.add(status === "weak" ? "is-weak" : "is-active");
   }
 
   els.gpsIndicator.className = "gps-indicator";

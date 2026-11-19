@@ -1,6 +1,6 @@
 {
   "name": "llegada",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Recordatorios por ubicación con geocercas, retardo, alarma y actualizaciones desde GitHub.",
   "type": "module",

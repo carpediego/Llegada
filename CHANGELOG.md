@@ -1,5 +1,12 @@
 # Llegada
 
+## 1.2.0 — 2026-11-19
+
+- Rediseño completo de la interfaz con navegación inferior, tarjetas nativas, estado de GPS y botón flotante.
+- Nueva pantalla de mapa independiente y ajustes a pantalla completa.
+- Tipografía y jerarquía visual de app móvil, sin secciones de página web.
+- Mejor experiencia en pantallas pequeñas y con la barra de navegación del sistema.
+
 ## 1.1.0 — 2026-11-19
 
 - App Android nativa con la misma interfaz, instalable como APK.
