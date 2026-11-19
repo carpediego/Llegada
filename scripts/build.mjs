@@ -250,6 +250,7 @@ function isExcludedFromPrecache(file) {
     normalized === "release-notes.md" ||
     normalized === "LICENSE" ||
     normalized === ".nojekyll" ||
+    normalized.startsWith("assets/fonts/OFL-") ||
     normalized.startsWith("downloads/")
   );
 }

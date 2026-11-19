@@ -148,7 +148,7 @@ La app intenta ser honesta: si no puede vigilar, lo dice en pantalla.
 - No hay cuentas, backend propio ni analítica.
 - Los recordatorios, coordenadas y ajustes se guardan en `localStorage` del navegador.
 - Las búsquedas de direcciones se envían a Nominatim/OpenStreetMap.
-- Los mapas se cargan desde OpenStreetMap.
+- Los mapas cargan teselas de OpenStreetMap; como cualquier mapa, el proveedor recibe la zona aproximada que se está viendo.
 - La comprobación de actualizaciones consulta GitHub Pages y la API pública de GitHub.
 - No se envía tu ubicación a ningún servidor de Llegada.
 
@@ -207,3 +207,5 @@ Cierra todas las pestañas de Llegada, vuelve a abrirla y busca actualizaciones.
 ## Licencia
 
 MIT. Consulta [LICENSE](LICENSE).
+
+Tipografías: Fraunces y Manrope, bajo SIL Open Font License (archivos OFL en `assets/fonts/`). Mapas: Leaflet (BSD-2-Clause) y datos de OpenStreetMap (ODbL).

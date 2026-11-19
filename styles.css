@@ -3752,6 +3752,24 @@ dialog::backdrop {
   }
 }
 
+@media (max-width: 360px) {
+  .brand-word {
+    display: none;
+  }
+
+  .brand {
+    gap: 0;
+  }
+
+  .topbar-actions {
+    gap: 4px;
+  }
+
+  .tracking-pill {
+    padding: 0 8px;
+  }
+}
+
 @media (max-width: 420px) {
   .topbar-actions {
     gap: 5px;

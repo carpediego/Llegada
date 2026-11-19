@@ -1409,7 +1409,6 @@ async function useCurrentLocationInForm() {
     setPickerPoint(position.lat, position.lng, { fly: true });
     if (!els.fieldPlace.value.trim()) {
       els.fieldPlace.value = "Mi ubicación";
-      reverseGeocode(position.lat, position.lng);
     }
     updateCoordsLine();
   } catch (error) {
@@ -1417,23 +1416,6 @@ async function useCurrentLocationInForm() {
   } finally {
     els.useCurrentLocation.disabled = false;
     els.useCurrentLocation.innerHTML = original;
-  }
-}
-
-async function reverseGeocode(lat, lng) {
-  try {
-    const url = new URL("https://nominatim.openstreetmap.org/reverse");
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("lat", String(lat));
-    url.searchParams.set("lon", String(lng));
-    url.searchParams.set("accept-language", "es");
-    const response = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!response.ok) return;
-    const data = await response.json();
-    const name = data.name || data.display_name?.split(",")[0] || "";
-    if (name && !els.fieldPlace.value.trim()) els.fieldPlace.value = name.slice(0, 60);
-  } catch {
-    // Optional nice-to-have.
   }
 }
 
@@ -1708,7 +1690,7 @@ async function checkForUpdates({ manual = false } = {}) {
     } else {
       els.updateDot.hidden = true;
       els.showUpdate.hidden = true;
-      els.downloadPackage.hidden = true;
+      els.downloadPackage.hidden = !result.packageUrl;
       els.updateStatus.textContent = `Estás al día · v${BUILD.version}`;
       if (manual) showToast("Llegada está al día.", { type: "success" });
     }
