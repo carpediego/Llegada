@@ -30,8 +30,45 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Compilar app y paquete
+      - name: Compilar app y paquete web
         run: npm run build
+
+      - name: Preparar Java para Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Copiar assets web a Android
+        run: node scripts/build-android.mjs
+
+      - name: Preparar firma Android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "Falta el secreto ANDROID_KEYSTORE_BASE64" >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/llegada-release.jks"
+
+      - name: Compilar APK Android
+        env:
+          LLEGADA_KEYSTORE: ${{ runner.temp }}/llegada-release.jks
+          LLEGADA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LLEGADA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LLEGADA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Copiar y firmar metadatos del APK
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/downloads/llegada-$TAG.apk"
+          node scripts/finalize-apk.mjs
 
       - name: Leer versión
         id: version
@@ -44,11 +81,12 @@ jobs:
         run: |
           TAG="v$VERSION"
           ZIP="dist/downloads/llegada-$TAG.zip"
+          APK="dist/downloads/llegada-$TAG.apk"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$ZIP" --clobber
+            gh release upload "$TAG" "$ZIP" "$APK" --clobber
             gh release edit "$TAG" --title "Llegada $TAG" --notes-file dist/release-notes.md
           else
-            gh release create "$TAG" "$ZIP" \
+            gh release create "$TAG" "$ZIP" "$APK" \
               --title "Llegada $TAG" \
               --notes-file dist/release-notes.md \
               --target "$GITHUB_SHA"

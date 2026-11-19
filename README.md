@@ -2,11 +2,12 @@
 
 **Recordatorios que te encuentran, no al revés.**
 
-Llegada es una app web instalable (PWA) **pensada para el celular**. Lanza recordatorios cuando entras o sales de un lugar. Tú eliges el radio, el tiempo de espera y qué hacer cuando suena: completarlo o posponerlo como una alarma.
+Llegada es una app **para Android** con recordatorios por ubicación, y también una PWA web. Lanza avisos cuando entras o sales de un lugar. Tú eliges el radio, el tiempo de espera y qué hacer cuando suena: completarlo o posponerlo como una alarma.
 
-La app se publica en GitHub Pages y se actualiza desde GitHub sin pasar por una tienda.
+La app Android usa un **servicio en primer plano con GPS**, alarma nativa y permisos de ubicación en segundo plano. Se publica en GitHub y se actualiza desde GitHub sin pasar por una tienda.
 
-- **Demo / app publicada:** https://carpediego.github.io/Llegada/
+- **App web:** https://carpediego.github.io/Llegada/
+- **APK Android:** https://github.com/carpediego/Llegada/releases/latest
 - **Repositorio:** https://github.com/carpediego/Llegada
 - **Releases y paquetes:** https://github.com/carpediego/Llegada/releases
 
@@ -18,13 +19,14 @@ La app se publica en GitHub Pages y se actualiza desde GitHub sin pasar por una 
 - Aviso **al llegar** o **al salir**.
 - Aviso **al instante** o **X minutos después** (hasta 3 horas).
 - Margen automático según la precisión del GPS y cancelación si sales del área antes de que termine la espera.
-- Alarma a pantalla completa con **sonido, vibración y notificación**.
-- **Posponer** 5, 10, 15 o 30 minutos (o el tiempo configurado), con repetición.
+- Alarma con **sonido, vibración, notificación a pantalla completa** y opción de posponer.
+- En Android: **servicio en primer plano** que sigue vigilando con la pantalla apagada y aviso aunque cierres la app.
+- Permisos guiados para **ubicación todo el tiempo**, notificaciones y **exclusión del ahorro de batería**.
 - **Repetir en cada visita** o completar una sola vez.
 - Mapa para buscar una dirección, tocar el punto exacto o usar tu ubicación actual.
 - Datos y recordatorios guardados **solo en tu dispositivo**.
-- Funciona **sin conexión** después de la primera carga.
-- **Actualizaciones desde GitHub** con búsqueda manual, descarga del paquete, verificación SHA-256 e instalación desde la propia app.
+- **Actualizaciones desde GitHub**: búsqueda, descarga del APK, verificación de firma e instalación del sistema. En la versión web se actualiza el paquete y el service worker.
+
 
 ---
 
@@ -43,9 +45,45 @@ También puedes usar `iniciar.cmd` en Windows: instala dependencias si hace falt
 
 > La geolocalización solo funciona en `localhost` o en HTTPS. En `file://` el navegador no entrega la ubicación y el service worker no se registra.
 
+### Compilar el APK Android
+
+Requisitos: JDK 17 y Android SDK 35.
+
+```powershell
+npm run build
+node scripts/build-android.mjs
+cd android
+.\gradlew.bat assembleRelease
+```
+
+El APK queda en `android/app/build/outputs/apk/release/app-release.apk`.
+
+Para firmar el release se necesitan estas variables de entorno (la clave no se versiona):
+
+```
+LLEGADA_KEYSTORE
+LLEGADA_KEYSTORE_PASSWORD
+LLEGADA_KEY_ALIAS
+LLEGADA_KEY_PASSWORD
+```
+
+GitHub Actions usa los secretos `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` y `ANDROID_KEY_PASSWORD`.
+
 ### En el teléfono
 
-1. Abre la URL de GitHub Pages en Chrome (Android) o Safari (iPhone).
+**Android (recomendado):**
+
+1. Abre el APK desde [Releases](https://github.com/carpediego/Llegada/releases/latest) en el teléfono.
+2. Permite instalar apps de esta fuente cuando Android lo pregunte.
+3. Abre Llegada y concede ubicación precisa y notificaciones.
+4. En **Ajustes → Modo Android en segundo plano**, pulsa:
+   - **Ubicación todo el tiempo** y elige “Permitir todo el tiempo”.
+   - **Quitar ahorro de batería** y confirma “Sin restricciones”.
+5. En algunos fabricantes (Xiaomi, Samsung, Huawei, Oppo) activa también **Autoarranque** en los ajustes del sistema.
+
+**iPhone / navegador:** la versión web se instala desde Chrome o Safari, pero el navegador no mantiene el GPS con la pantalla apagada.
+
+1. Abre la URL de GitHub Pages.
 2. Instálala desde el menú del navegador: **Instalar aplicación** o **Compartir → Añadir a pantalla de inicio**.
 3. Activa la ubicación y las notificaciones.
 4. Mantén la app abierta mientras quieras vigilar una geocerca.
@@ -74,11 +112,11 @@ La app no depende de una tienda. El flujo es:
 
 1. Se cambia la versión en `package.json` y se añaden las notas en `CHANGELOG.md`.
 2. Se hace commit y push a `main`.
-3. GitHub Actions compila, crea el release `vX.Y.Z`, adjunta el `.zip` y publica en Pages.
-4. En **Ajustes → Actualizaciones**, la app consulta `version.json` y el último release de GitHub.
-5. Si hay una versión nueva, muestra las notas y el tamaño.
-6. **Descargar e instalar** descarga todos los archivos del manifiesto, verifica el SHA-256 de cada uno, los guarda en una caché de instalación, activa el service worker nuevo y recarga.
-7. **Descargar .zip** guarda el paquete completo para copia manual o publicación en otro sitio.
+3. GitHub Actions compila la web, el APK firmado, crea el release `vX.Y.Z`, adjunta `.zip` y `.apk`, y publica en Pages.
+4. En **Ajustes → Actualizaciones**, la app consulta la versión publicada en GitHub Pages y el último release.
+5. **Android:** descarga el APK con el gestor del sistema, abre el instalador de Android y actualiza conservando tus recordatorios.
+6. **Web:** descarga el paquete, verifica el SHA-256 de cada archivo, lo guarda en caché y recarga.
+7. **Descargar .zip / APK** guarda el paquete completo para copia manual.
 
 La comprobación automática ocurre como máximo una vez cada 6 horas y también puede lanzarse a mano.
 
@@ -131,13 +169,19 @@ El workflow `.github/workflows/deploy.yml` hace el resto:
 
 ## Límites importantes (leer antes de confiar una alarma crítica)
 
-Esta es una **PWA**, no una app nativa. Los navegadores no permiten ejecutar GPS en segundo plano de forma garantizada.
+**Android:**
 
-- La geocerca funciona mientras Llegada está abierta, en primer plano o en una pestaña reciente.
-- Si el sistema operativo suspende el navegador, bloquea la pantalla o cierra la app, la geocerca deja de actualizarse.
-- Las notificaciones del sistema pueden avisar de un evento ya detectado, pero no despiertan un GPS que el sistema haya apagado.
-- En interiores, sótanos o con ahorro de batería extremo el GPS puede tardar o dar un error grande. El radio y el margen de precisión ayudan, pero no hacen magia.
-- Para una geocerca 24/7 real, con la app cerrada, hace falta una app nativa con permiso de ubicación en segundo plano (Android `GeofencingClient` o iOS `Core Location`). La interfaz y la lógica de este proyecto están separadas para poder llevarlas a una envoltura nativa más adelante.
+- La app usa un servicio en primer plano con GPS y alarma nativa. Funciona con la pantalla apagada y al cerrar la pantalla, siempre que el sistema no detenga el servicio.
+- Para máxima estabilidad: ubicación **todo el tiempo**, **sin ahorro de batería** y, en fabricantes agresivos, **autoarranque** permitido.
+- Si el teléfono reinicia, Llegada intenta retomar la vigilancia si estaba activa.
+- El GPS puede fallar en interiores, sótanos o con señal débil. El radio y el margen de precisión ayudan, pero no hacen magia.
+- No es una app de Play Store; se instala el APK firmado desde GitHub.
+
+**Web / iPhone:**
+
+- La geocerca funciona mientras la pestaña está abierta o reciente.
+- Si el sistema operativo suspende el navegador o cierra la app, la geocerca deja de actualizarse.
+- Para una geocerca 24/7 real usamos la app Android, no la PWA.
 
 La app intenta ser honesta: si no puede vigilar, lo dice en pantalla.
 
@@ -160,16 +204,24 @@ La app intenta ser honesta: si no puede vigilar, lo dice en pantalla.
 index.html                 Interfaz y diálogos
 styles.css                 Diseño responsive
 js/app.js                  Lógica principal, geocercas, alarmas y UI
-js/geo.js                  Geolocalización y cálculo de distancias
+js/native.js               Puente entre la interfaz y Android
+js/geo.js                  Geolocalización web y cálculo de distancias
 js/map.js                  Mapas Leaflet (dashboard y selector)
 js/store.js                Persistencia local, validación e import/export
 js/audio.js                Sonido de alarma con Web Audio
-js/notifications.js        Notificaciones del sistema
+js/notifications.js        Notificaciones web
 js/updater.js              Búsqueda, descarga, SHA-256 e instalación
 sw.template.js             Plantilla del service worker
-scripts/build.mjs          Build, manifiestos, hashes y ZIP
+android/                   Proyecto Android (WebView + servicio + alarma)
+android/app/src/main/java/com/carpediego/llegada/GeofenceService.kt
+                           Servicio GPS en primer plano y geocercas nativas
+android/app/src/main/java/com/carpediego/llegada/MainActivity.kt
+                           WebView, permisos, alarmas y actualización del APK
+scripts/build.mjs          Build web, manifiestos, hashes y ZIP
+scripts/build-android.mjs  Copia assets y genera versión de Android
+scripts/finalize-apk.mjs   Añade tamaño y SHA-256 del APK
 server.js                  Servidor local sin dependencias
-.github/workflows/deploy.yml  Release + GitHub Pages
+.github/workflows/deploy.yml  APK + release + GitHub Pages
 ```
 
 ### Comandos
@@ -194,7 +246,10 @@ Comprueba que estás en `localhost` o HTTPS. En Chrome: candado de la barra → 
 Sal al exterior, activa el GPS y vuelve a pulsar Reintentar. Si estás en un edificio, sube el radio a 250–500 m.
 
 **La alarma no suena con la pantalla apagada**  
-Es el límite del navegador. Mantén Llegada abierta o usa una app nativa para ese caso.
+En Android revisa: Ubicación → Permitir todo el tiempo; Batería → Sin restricciones; Autoarranque permitido. En la versión web es el límite del navegador: mantén Llegada abierta o usa el APK.
+
+**Android actualiza pero no instala**  
+Permite “Instalar apps desconocidas” para Llegada cuando el sistema lo pida. El APK se descarga desde GitHub Pages y se abre con el instalador oficial.
 
 **No aparece una actualización**  
 Pulsa **Buscar actualizaciones** en Ajustes. Si el release existe pero Pages aún no terminó de desplegar, espera un minuto. También puedes descargar el `.zip` desde GitHub Releases.

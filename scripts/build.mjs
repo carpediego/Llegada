@@ -125,6 +125,12 @@ const versionDocument = {
     size: 0,
     sha256: ""
   },
+  apk: {
+    url: `downloads/llegada-${tag}.apk`,
+    name: `llegada-${tag}.apk`,
+    size: 0,
+    sha256: ""
+  },
   update: {
     manifest: "update.json",
     fileCount: files.length,

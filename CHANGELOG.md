@@ -1,5 +1,14 @@
 # Llegada
 
+## 1.1.0 — 2026-11-19
+
+- App Android nativa con la misma interfaz, instalable como APK.
+- Servicio en primer plano con GPS, wake lock y arranque tras reiniciar el teléfono.
+- Alarma nativa con sonido, vibración, notificación a pantalla completa y posponer.
+- Permisos guiados para ubicación en segundo plano y exclusión del ahorro de batería.
+- Actualizaciones de Android desde GitHub: descarga del APK, verificación de firma e instalación del sistema.
+- Mejoras de sincronización entre la interfaz y el servicio de geocercas.
+
 ## 1.0.0 — 2026-11-19
 
 - Recordatorios por geocerca con radio configurable de 30 m a 1 km.

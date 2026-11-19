@@ -4,3 +4,13 @@ dist/
 *.log
 .DS_Store
 .env
+android/.gradle/
+android/.kotlin/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/version.properties
+android/app/src/main/assets/www/
+android/llegada-release.jks
+android/release-keystore.properties

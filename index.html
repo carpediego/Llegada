@@ -475,10 +475,28 @@
         <button class="button button--outline button--full" id="settings-notifications" type="button">
           <svg class="icon"><use href="#i-bell"/></svg><span>Activar notificaciones</span>
         </button>
+        <div class="native-permissions" id="native-permissions" hidden>
+          <div class="native-permission-head">
+            <strong>Modo Android en segundo plano</strong>
+            <span class="native-permission-badge" id="native-permission-badge">Revisar</span>
+          </div>
+          <p id="native-permission-copy">Para que la geocerca siga activa con la pantalla apagada, permite la ubicación todo el tiempo y quita el ahorro de batería.</p>
+          <div class="native-permission-actions">
+            <button class="button button--outline button--small" id="native-background-button" type="button">
+              <svg class="icon"><use href="#i-locate"/></svg>Ubicación todo el tiempo
+            </button>
+            <button class="button button--outline button--small" id="native-battery-button" type="button">
+              <svg class="icon"><use href="#i-battery"/></svg>Quitar ahorro de batería
+            </button>
+            <button class="button button--quiet button--small" id="native-settings-button" type="button">
+              <svg class="icon"><use href="#i-settings"/></svg>Ajustes de Android
+            </button>
+          </div>
+        </div>
         <button class="button button--outline button--full" id="install-button" type="button" hidden>
           <svg class="icon"><use href="#i-download"/></svg>Instalar Llegada
         </button>
-        <p class="helper">La app usa tu GPS solo mientras está abierta. Para avisos con la pantalla apagada o la app cerrada, necesitas una app nativa. <button class="inline-link" id="limits-button" type="button">Ver límites</button></p>
+        <p class="helper" id="location-helper">La app usa tu GPS solo mientras está abierta. Para avisos con la pantalla apagada o la app cerrada, necesitas una app nativa. <button class="inline-link" id="limits-button" type="button">Ver límites</button></p>
       </section>
 
       <section class="settings-section">
@@ -576,7 +594,7 @@
     <div class="sheet-body info-body">
       <div class="info-callout">
         <svg class="icon"><use href="#i-info"/></svg>
-        <p><strong>Importante:</strong> los navegadores no permiten usar el GPS con la app cerrada. Llegada vigila mientras está abierta (en primer plano o en una pestaña reciente) y puede mostrar notificaciones del sistema.</p>
+        <p id="info-callout-text"><strong>Importante:</strong> los navegadores no permiten usar el GPS con la app cerrada. Llegada vigila mientras está abierta (en primer plano o en una pestaña reciente) y puede mostrar notificaciones del sistema.</p>
       </div>
       <h3>Qué sí hace</h3>
       <ul class="info-list">
@@ -591,7 +609,8 @@
         <li><svg class="icon"><use href="#i-x"/></svg>Garantizar el GPS bajo techo, en sótanos o con el ahorro de batería extremo.</li>
         <li><svg class="icon"><use href="#i-x"/></svg>Enviarte avisos si el sistema operativo suspende el navegador.</li>
       </ul>
-      <p class="info-tip">Para una geocerca 24/7 de verdad hace falta una app nativa con permiso de ubicación en segundo plano. Este proyecto deja la base web lista para ese siguiente paso.</p>
+      <p class="info-tip" id="info-browser-note">Esta versión web funciona mientras Llegada está abierta. Para una geocerca 24/7 con la pantalla apagada, instala la app Android con servicio en segundo plano.</p>
+      <p class="info-tip" id="info-native-note" hidden>Esta app Android usa un servicio en primer plano con GPS y alarma nativa. Para que funcione con la pantalla apagada, concede Ubicación todo el tiempo y quita el ahorro de batería. Algunos fabricantes (Xiaomi, Samsung, Huawei) además requieren permitir el autoarranque.</p>
       <p class="info-tip">Tus recordatorios y coordenadas se guardan en este dispositivo. El mapa y las búsquedas de direcciones usan OpenStreetMap, así que el proveedor del mapa puede ver la zona que estás consultando. Llegada no tiene servidores propios ni cuentas.</p>
       <h3>Actualizaciones desde GitHub</h3>
       <ul class="info-list">

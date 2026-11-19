@@ -3,6 +3,13 @@ const CURRENT_VERSION = BUILD.version || "0.0.0";
 const REPO = BUILD.repo || "carpediego/Llegada";
 const REPO_URL = `https://github.com/${REPO}`;
 const RELEASES_URL = `${REPO_URL}/releases`;
+const NATIVE = Boolean(
+  typeof window !== "undefined" &&
+    window.Android &&
+    typeof window.Android.isNative === "function" &&
+    window.Android.isNative()
+);
+const BASE_URL = NATIVE && BUILD.pagesUrl ? BUILD.pagesUrl : document.baseURI;
 
 export class UpdateManager {
   constructor() {
@@ -24,7 +31,7 @@ export class UpdateManager {
     this.checking = true;
     try {
       if (!navigator.onLine) throw new Error("No hay conexión a internet.");
-      const versionUrl = new URL("version.json", document.baseURI);
+      const versionUrl = new URL("version.json", BASE_URL);
       const manifest = await fetchJson(`${versionUrl.href}?t=${Date.now()}`);
       if (!manifest?.version || !isSemver(manifest.version)) {
         throw new Error("La información de versión no es válida.");
@@ -42,6 +49,7 @@ export class UpdateManager {
       const releaseMatches = release && cleanTag(release.tag_name) === remoteVersion;
       const notes = normalizeNotes(manifest.notes, releaseMatches ? release.body : "");
       const packageUrl = resolvePackageUrl(manifest, release, availabilityFor(release, remoteVersion));
+      const apkUrl = resolveApkUrl(manifest, release);
 
       this.latest = {
         currentVersion: CURRENT_VERSION,
@@ -53,6 +61,7 @@ export class UpdateManager {
         size: Number(manifest.update?.totalSize) || 0,
         fileCount: Number(manifest.update?.fileCount) || 0,
         packageUrl,
+        apkUrl,
         releaseUrl: manifest.releaseUrl || (releaseMatches ? release.html_url : `${REPO_URL}/releases`),
         release,
         manifest,
@@ -76,7 +85,7 @@ export class UpdateManager {
     if (!("caches" in window)) throw new Error("Este navegador no permite instalar paquetes offline.");
     if (!globalThis.crypto?.subtle) throw new Error("La verificación de seguridad necesita HTTPS o localhost.");
 
-    const manifestUrl = new URL(update.manifest.update?.manifest || "update.json", document.baseURI);
+    const manifestUrl = new URL(update.manifest.update?.manifest || "update.json", BASE_URL);
     const manifest = await fetchJson(`${manifestUrl.href}?t=${Date.now()}`, { cache: "no-store" });
     if (manifest?.version !== update.version || !Array.isArray(manifest.files) || !manifest.files.length) {
       throw new Error("El paquete descargado no coincide con la versión anunciada.");
@@ -205,12 +214,21 @@ async function fetchLatestRelease() {
 
 function resolvePackageUrl(manifest, release, releaseIsNewer) {
   if (manifest.package?.url) {
-    return new URL(manifest.package.url, document.baseURI).href;
+    return new URL(manifest.package.url, BASE_URL).href;
   }
   if (releaseIsNewer) {
     const asset = release?.assets?.find((item) => /\.zip$/i.test(item.name));
     if (asset?.browser_download_url) return asset.browser_download_url;
   }
+  return "";
+}
+
+function resolveApkUrl(manifest, release) {
+  if (manifest.apk?.url) {
+    return new URL(manifest.apk.url, BASE_URL).href;
+  }
+  const asset = release?.assets?.find((item) => /\.apk$/i.test(item.name));
+  if (asset?.browser_download_url) return asset.browser_download_url;
   return "";
 }
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#F3EFE5</color>
+    <color name="surface">#FFFDF8</color>
+    <color name="green_deep">#143F31</color>
+    <color name="lime">#DCF78F</color>
+    <color name="ink">#17251F</color>
+</resources>

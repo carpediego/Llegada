@@ -23,6 +23,21 @@ import {
   formatTrigger
 } from "./notifications.js";
 import { UpdateManager } from "./updater.js";
+import {
+  isNativeApp,
+  NativeTracker,
+  syncNativeReminders,
+  resetNativeReminder,
+  resolveNativeAlarm,
+  requestNativePermissions,
+  requestNativeBackgroundLocation,
+  requestNativeBatteryExemption,
+  openNativeAppSettings,
+  downloadNativeApk,
+  consumeNativePendingAlarm,
+  nativeStatus,
+  nativeVersion
+} from "./native.js";
 
 const BUILD = globalThis.__LLEGADA_BUILD__ || {
   version: "0.0.0",
@@ -38,11 +53,18 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const state = loadState();
-const tracker = new LocationTracker({
-  onPosition: handlePosition,
-  onStatus: handleTrackerStatus,
-  onError: handleTrackerError
-});
+const nativeMode = isNativeApp();
+const tracker = nativeMode
+  ? new NativeTracker({
+      onPosition: handlePosition,
+      onStatus: handleTrackerStatus,
+      onError: handleTrackerError
+    })
+  : new LocationTracker({
+      onPosition: handlePosition,
+      onStatus: handleTrackerStatus,
+      onError: handleTrackerError
+    });
 const alarm = new AlarmPlayer();
 const updater = new UpdateManager();
 
@@ -61,7 +83,8 @@ const ui = {
   saveTimer: null,
   deferredInstall: null,
   updateInfo: null,
-  recoveredRinging: []
+  recoveredRinging: [],
+  nativeStatus: null
 };
 
 let wakeLock = null;
@@ -129,6 +152,12 @@ const els = {
   geolocationStatus: $("#geolocation-status"),
   notificationsStatus: $("#notifications-status"),
   settingsNotifications: $("#settings-notifications"),
+  nativePermissions: $("#native-permissions"),
+  nativePermissionBadge: $("#native-permission-badge"),
+  nativePermissionCopy: $("#native-permission-copy"),
+  nativeBackgroundButton: $("#native-background-button"),
+  nativeBatteryButton: $("#native-battery-button"),
+  nativeSettingsButton: $("#native-settings-button"),
   installButton: $("#install-button"),
   limitsButton: $("#limits-button"),
   exportButton: $("#export-button"),
@@ -190,12 +219,25 @@ async function init() {
   if (state.lastPosition && ui.dashboardMap) {
     ui.dashboardMap.setUser(state.lastPosition, { center: true });
   }
+  if (nativeMode) syncNativeState();
   await restoreTracking();
   registerServiceWorker();
   handleQueryParams();
   restoreRecoveredAlarms();
   maybeAutoUpdateCheck();
   updateNotificationUI();
+
+  if (nativeMode) {
+    syncNativeState();
+    refreshNativeStatus();
+    window.setTimeout(() => {
+      const pendingAlarm = consumeNativePendingAlarm();
+      if (pendingAlarm) {
+        const reminder = findReminder(pendingAlarm);
+        if (reminder && !ui.activeAlarm) triggerReminder(reminder, { native: true });
+      }
+    }, 700);
+  }
 
   const justUpdated = sessionStorage.getItem("llegada.just-updated");
   if (justUpdated) {
@@ -211,7 +253,32 @@ function setBuildInfo() {
   els.updateFromVersion.textContent = BUILD.version;
   els.updateToVersion.textContent = BUILD.version;
   const versionLine = $(".settings-version");
-  if (versionLine) versionLine.textContent = `Llegada · v${BUILD.version} · GitHub Pages`;
+  if (versionLine) versionLine.textContent = `Llegada · v${BUILD.version} · ${nativeMode ? "Android" : "GitHub Pages"}`;
+  if (nativeMode) {
+    const locationHelper = $("#location-helper");
+    if (locationHelper) {
+      locationHelper.innerHTML =
+        'Servicio Android en segundo plano con GPS. Para la pantalla apagada, permite ubicación todo el tiempo y quita el ahorro de batería. <button class="inline-link" id="limits-button" type="button">Ver detalles</button>';
+      const limits = $("#limits-button");
+      if (limits) limits.addEventListener("click", showInfoDialog);
+    }
+    const callout = $("#info-callout-text");
+    if (callout) {
+      callout.innerHTML =
+        "<strong>Modo Android:</strong> Llegada mantiene un servicio en primer plano con GPS para vigilar tus zonas aunque cierres la pantalla. Android muestra una notificación permanente mientras está activo.";
+    }
+    const browserNote = $("#info-browser-note");
+    const nativeNote = $("#info-native-note");
+    if (browserNote) browserNote.hidden = true;
+    if (nativeNote) nativeNote.hidden = false;
+    const installButton = $("#install-button");
+    if (installButton) installButton.hidden = true;
+    const downloadButton = $("#download-package");
+    if (downloadButton) downloadButton.innerHTML =
+      '<svg class="icon"><use href="#i-download"/></svg>Descargar APK';
+    const downloadButtonDialog = $("#download-package-dialog");
+    if (downloadButtonDialog) downloadButtonDialog.textContent = "Descargar APK";
+  }
 }
 
 function repairState() {
@@ -398,12 +465,35 @@ function bindEvents() {
     state.settings.autoUpdateCheck = els.settingAutoUpdate.checked;
     saveState(state);
   });
-  els.settingsNotifications.addEventListener("click", requestNotifications);
-  els.enableNotifications.addEventListener("click", requestNotifications);
+  els.settingsNotifications.addEventListener("click", () => {
+    if (nativeMode) requestNativePermissions();
+    else requestNotifications();
+  });
+  els.enableNotifications.addEventListener("click", () => {
+    if (nativeMode) requestNativePermissions();
+    else requestNotifications();
+  });
   els.dismissNotifications.addEventListener("click", () => {
     state.settings.notificationsDismissed = true;
     saveState(state);
     updateNotificationUI();
+  });
+  els.nativeBackgroundButton.addEventListener("click", () => {
+    requestNativeBackgroundLocation();
+    showToast("Elige Ubicación → Permitir todo el tiempo. Si no aparece, usa Ajustes de Android.", {
+      type: "info",
+      duration: 8000
+    });
+  });
+  els.nativeBatteryButton.addEventListener("click", () => {
+    requestNativeBatteryExemption();
+    showToast("Confirma “Sin restricciones” para que Android no pause la geocerca.", {
+      type: "info",
+      duration: 7000
+    });
+  });
+  els.nativeSettingsButton.addEventListener("click", () => {
+    openNativeAppSettings();
   });
   els.installButton.addEventListener("click", installApp);
   els.limitsButton.addEventListener("click", showInfoDialog);
@@ -445,6 +535,7 @@ function bindEvents() {
       if (state.settings.trackingEnabled && !tracker.active) {
         tracker.start();
       }
+      if (nativeMode) refreshNativeStatus();
       acquireWakeLock();
       tick();
     } else {
@@ -484,6 +575,31 @@ function bindEvents() {
     });
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (ui.activeAlarm) return;
+    });
+  }
+
+  if (nativeMode) {
+    window.addEventListener("llegada:native-phase", (event) => {
+      applyNativePhase(event.detail);
+    });
+    window.addEventListener("llegada:native-alarm", (event) => {
+      const id = event.detail?.id;
+      if (!id) return;
+      const reminder = findReminder(id);
+      if (reminder && !ui.activeAlarm) {
+        triggerReminder(reminder, { native: true });
+      }
+    });
+    window.addEventListener("llegada:native-permission", (event) => {
+      ui.trackerPermission = event.detail?.state || ui.trackerPermission;
+      refreshNativeStatus();
+      updateGpsUI();
+      updateSettingsUI();
+    });
+    window.addEventListener("llegada:native-status", (event) => {
+      if (event.detail?.state === "active" || event.detail?.state === "off") {
+        refreshNativeStatus();
+      }
     });
   }
 
@@ -552,6 +668,7 @@ function tick() {
 
 function processDueReminders() {
   if (ui.activeAlarm) return;
+  if (nativeMode) return;
   const now = Date.now();
   for (const reminder of state.reminders) {
     if (!reminder.enabled) continue;
@@ -741,6 +858,7 @@ function toggleReminder(reminder) {
   reminder.updatedAt = Date.now();
   saveState(state);
   renderReminders();
+  syncNativeState();
 }
 
 function testReminder(reminder) {
@@ -790,8 +908,14 @@ async function triggerReminder(reminder, { test = false } = {}) {
     .join("");
 
   if (!els.alarmDialog.open) els.alarmDialog.showModal();
-  alarm.start({ sound: reminder.sound, vibrate: reminder.vibrate && !test }).catch(() => {});
-  showReminderNotification(reminder, { test }).catch(() => {});
+  const nativeAlarm = nativeMode && !test;
+  alarm.start({
+    sound: !nativeAlarm && reminder.sound,
+    vibrate: !nativeAlarm && reminder.vibrate && !test
+  }).catch(() => {});
+  if (!nativeMode) {
+    showReminderNotification(reminder, { test }).catch(() => {});
+  }
   if (test) els.alarmTestClose.focus();
   else els.alarmDone.focus();
   refreshStatuses();
@@ -805,6 +929,9 @@ function dismissAlarm(action, snoozeMinutes = state.settings.defaultSnooze) {
 
   alarm.stop();
   closeReminderNotification(reminder.id).catch(() => {});
+  if (nativeMode && !active.test && (action === "snooze" || action === "done")) {
+    resolveNativeAlarm(reminder.id, action, Math.max(1, snoozeMinutes));
+  }
   if (els.alarmDialog.open) els.alarmDialog.close();
   ui.activeAlarm = null;
 
@@ -820,6 +947,7 @@ function dismissAlarm(action, snoozeMinutes = state.settings.defaultSnooze) {
     reminder.updatedAt = Date.now();
     saveState(state);
     renderReminders();
+    syncNativeState();
     showToast(`Pospuesto ${snoozeMinutes} min.`, {
       type: "info",
       icon: "clock",
@@ -847,6 +975,7 @@ function dismissAlarm(action, snoozeMinutes = state.settings.defaultSnooze) {
     }
     saveState(state);
     renderReminders();
+    syncNativeState();
     window.setTimeout(processDueReminders, 500);
   }
 }
@@ -872,7 +1001,7 @@ function handlePosition(position) {
     ui.dashboardMap.setUser(position);
     els.mapPanel.classList.add("has-map");
   }
-  processGeofences(position);
+  if (!nativeMode) processGeofences(position);
   saveSoon();
   updateGpsUI();
 }
@@ -1051,10 +1180,10 @@ function handleTrackerError(error, code) {
 async function restoreTracking() {
   tracker.lastPosition = state.lastPosition;
   ui.trackerPermission = await tracker.getPermissionState();
-  if (state.settings.trackingEnabled && ui.trackerPermission === "granted") {
+  if (state.settings.trackingEnabled && ui.trackerPermission !== "denied" && ui.trackerPermission !== "coarse") {
     tracker.start();
     acquireWakeLock();
-  } else if (state.settings.trackingEnabled) {
+  } else if (state.settings.trackingEnabled && (ui.trackerPermission === "denied" || ui.trackerPermission === "coarse")) {
     state.settings.trackingEnabled = false;
     saveState(state);
   }
@@ -1076,6 +1205,7 @@ function enableTracking({ userInitiated = false } = {}) {
   ui.trackerError = "";
   ui.trackerStatus = "starting";
   saveState(state);
+  if (nativeMode) syncNativeState();
   tracker.start();
   acquireWakeLock();
   navigator.storage?.persist?.().catch(() => {});
@@ -1340,6 +1470,7 @@ async function handleReminderSubmit(event) {
       existing.pendingUntil = null;
       existing.snoozedUntil = null;
       ui.distances.delete(existing.id);
+      resetNativeReminder(existing.id);
     }
   } else {
     const reminder = createReminder(payload);
@@ -1364,6 +1495,7 @@ async function handleReminderSubmit(event) {
 
   closeReminderDialog();
   renderReminders();
+  syncNativeState();
   updateNotificationUI();
   const active = state.settings.trackingEnabled;
   showToast(
@@ -1389,6 +1521,7 @@ function deleteCurrentReminder() {
   saveState(state);
   closeReminderDialog();
   renderReminders();
+  syncNativeState();
   showToast("Recordatorio eliminado.", { type: "info" });
 }
 
@@ -1524,8 +1657,12 @@ function updateSettingsUI() {
   );
   els.geolocationStatus.classList.toggle("is-bad", ui.trackerPermission === "denied");
 
-  const notificationsText =
-    permission === "granted"
+  const nativeInfo = nativeMode ? ui.nativeStatus || nativeStatus() || {} : null;
+  const notificationsText = nativeMode
+    ? nativeInfo.notifications
+      ? "Notificaciones: activas"
+      : "Notificaciones: permiso pendiente"
+    : permission === "granted"
       ? "Notificaciones: activas"
       : permission === "denied"
         ? "Notificaciones: bloqueadas"
@@ -1533,14 +1670,88 @@ function updateSettingsUI() {
           ? "Notificaciones: no disponibles"
           : "Notificaciones: sin permiso";
   els.notificationsStatus.textContent = notificationsText;
-  els.notificationsStatus.classList.toggle("is-ok", permission === "granted");
-  els.notificationsStatus.classList.toggle("is-bad", permission === "denied" || permission === "unsupported");
+  els.notificationsStatus.classList.toggle(
+    "is-ok",
+    nativeMode ? Boolean(nativeInfo.notifications) : permission === "granted"
+  );
+  els.notificationsStatus.classList.toggle(
+    "is-bad",
+    nativeMode ? false : permission === "denied" || permission === "unsupported"
+  );
 
   els.settingsNotifications.querySelector("span").textContent =
-    permission === "granted" ? "Notificaciones activadas" : "Activar notificaciones";
-  els.settingsNotifications.disabled = permission === "granted" || permission === "unsupported";
+    nativeMode
+      ? nativeInfo.notifications
+        ? "Notificaciones activadas"
+        : "Activar notificaciones"
+      : permission === "granted"
+        ? "Notificaciones activadas"
+        : "Activar notificaciones";
+  els.settingsNotifications.disabled = nativeMode
+    ? Boolean(nativeInfo.notifications)
+    : permission === "granted" || permission === "unsupported";
 
-  els.installButton.hidden = isStandalone() || (!ui.deferredInstall && !isIos());
+  els.installButton.hidden = nativeMode || isStandalone() || (!ui.deferredInstall && !isIos());
+  renderNativePermissionUI();
+}
+
+function syncNativeState() {
+  if (!nativeMode) return;
+  syncNativeReminders(state.reminders);
+}
+
+function refreshNativeStatus() {
+  if (!nativeMode) return;
+  ui.nativeStatus = nativeStatus();
+  renderNativePermissionUI();
+  updateGpsUI();
+}
+
+function renderNativePermissionUI() {
+  if (!els.nativePermissions) return;
+  els.nativePermissions.hidden = !nativeMode;
+  if (!nativeMode) return;
+  if (!ui.nativeStatus) ui.nativeStatus = nativeStatus();
+  const info = ui.nativeStatus || {};
+  const background = Boolean(info.background);
+  const battery = Boolean(info.battery);
+  const fine = Boolean(info.fine);
+
+  els.nativePermissionBadge.textContent =
+    fine && background && battery ? "Todo listo" : "Revisar";
+  els.nativePermissionBadge.classList.toggle("is-ok", fine && background && battery);
+
+  if (!fine) {
+    els.nativePermissionCopy.textContent =
+      "Concede la ubicación precisa a Llegada para que pueda detectar tus zonas.";
+  } else if (!background || !battery) {
+    const missing = [];
+    if (!background) missing.push("permitir la ubicación todo el tiempo");
+    if (!battery) missing.push("quitar el ahorro de batería");
+    els.nativePermissionCopy.textContent =
+      `Falta ${missing.join(" y ")}. Android puede pausar la geocerca con la pantalla apagada si no lo permites.`;
+  } else {
+    els.nativePermissionCopy.textContent =
+      "Ubicación en segundo plano y batería sin restricciones. La geocerca puede seguir con la pantalla apagada.";
+  }
+
+  els.nativeBackgroundButton.disabled = background;
+  els.nativeBatteryButton.disabled = battery;
+}
+
+function applyNativePhase(detail) {
+  if (!detail?.id) return;
+  const reminder = findReminder(detail.id);
+  if (!reminder) return;
+  reminder.phase = detail.phase || "idle";
+  reminder.pendingUntil = Number(detail.pendingUntil) || null;
+  reminder.snoozedUntil = Number(detail.snoozedUntil) || null;
+  reminder.pendingDirection = detail.pendingDirection === "exit" ? "exit" : "enter";
+  if (typeof detail.inside === "boolean") reminder.inside = detail.inside;
+  if (typeof detail.enabled === "boolean") reminder.enabled = detail.enabled;
+  if (reminder.phase === "done") reminder.enabled = false;
+  saveState(state);
+  refreshStatuses();
 }
 
 function ensureSnoozeOption(minutes) {
@@ -1554,6 +1765,11 @@ function ensureSnoozeOption(minutes) {
 }
 
 function updateNotificationUI() {
+  if (nativeMode) {
+    els.permissionBanner.hidden = true;
+    if (els.notificationDot) els.notificationDot.hidden = true;
+    return;
+  }
   const permission = notificationPermission();
   if (!els.notificationDot) return;
   const relevant = state.reminders.length > 0 || state.settings.trackingEnabled;
@@ -1636,6 +1852,7 @@ async function importData(event) {
     state.settings.autoUpdateCheck = imported.settings.autoUpdateCheck !== false;
     saveState(state);
     renderReminders();
+    syncNativeState();
     updateSettingsUI();
     showToast("Copia importada.", { type: "success" });
   } catch (error) {
@@ -1653,6 +1870,7 @@ function clearAllData() {
   if (ui.activeAlarm) dismissAlarm("test");
   saveState(state);
   renderReminders();
+  syncNativeState();
   showToast("Recordatorios borrados.", { type: "info" });
 }
 
@@ -1676,7 +1894,7 @@ async function checkForUpdates({ manual = false } = {}) {
     if (result.available) {
       els.updateDot.hidden = false;
       els.showUpdate.hidden = false;
-      els.downloadPackage.hidden = !result.packageUrl;
+      els.downloadPackage.hidden = nativeMode ? !result.apkUrl : !result.packageUrl;
       els.updateStatus.classList.add("is-available");
       els.updateStatus.textContent = `Nueva versión v${result.version} disponible. Tienes la v${BUILD.version}.`;
       if (manual) openUpdateDialog();
@@ -1690,7 +1908,7 @@ async function checkForUpdates({ manual = false } = {}) {
     } else {
       els.updateDot.hidden = true;
       els.showUpdate.hidden = true;
-      els.downloadPackage.hidden = !result.packageUrl;
+      els.downloadPackage.hidden = nativeMode ? !result.apkUrl : !result.packageUrl;
       els.updateStatus.textContent = `Estás al día · v${BUILD.version}`;
       if (manual) showToast("Llegada está al día.", { type: "success" });
     }
@@ -1721,7 +1939,7 @@ function openUpdateDialog() {
   els.installUpdate.disabled = false;
   els.installUpdate.innerHTML = '<svg class="icon"><use href="#i-download"/></svg><span>Descargar e instalar</span>';
   els.releaseLink.href = update.releaseUrl || BUILD.releaseUrl;
-  els.downloadPackageDialog.hidden = !update.packageUrl;
+  els.downloadPackageDialog.hidden = nativeMode ? !update.apkUrl : !update.packageUrl;
   if (!els.updateDialog.open) els.updateDialog.showModal();
   els.updateDialog.querySelector(".sheet-body").scrollTop = 0;
 }
@@ -1730,6 +1948,35 @@ async function installUpdate() {
   const update = ui.updateInfo;
   if (!update) return;
   els.updateError.hidden = true;
+
+  if (nativeMode) {
+    if (!update.apkUrl) {
+      els.updateError.hidden = false;
+      els.updateError.textContent = "El APK de esta versión todavía no está publicado.";
+      return;
+    }
+    const started = downloadNativeApk(update.apkUrl, update.version);
+    if (!started) {
+      els.updateError.hidden = false;
+      els.updateError.textContent = "No se pudo iniciar la descarga del APK.";
+      return;
+    }
+    els.installProgress.hidden = false;
+    updateInstallProgress({
+      percent: 6,
+      label: "Descargando APK…",
+      detail: "Android te pedirá confirmar la instalación al terminar."
+    });
+    els.installUpdate.disabled = true;
+    els.installUpdate.innerHTML = '<svg class="icon"><use href="#i-refresh"/></svg><span>Descargando APK…</span>';
+    showToast("Descargando el APK. Acepta la instalación cuando termine.", {
+      type: "info",
+      icon: "download",
+      duration: 7000
+    });
+    return;
+  }
+
   els.installUpdate.disabled = true;
   els.installUpdate.innerHTML = '<svg class="icon"><use href="#i-refresh"/></svg><span>Instalando…</span>';
   els.installProgress.hidden = false;
@@ -1758,6 +2005,18 @@ function updateInstallProgress({ percent = 0, label = "", detail = "" }) {
 function downloadPackage(update) {
   if (!update) {
     showToast("Primero busca una actualización.", { type: "info" });
+    return;
+  }
+  if (nativeMode) {
+    if (!update.apkUrl) {
+      showToast("El APK todavía no está disponible. Prueba en unos minutos.", { type: "info" });
+      return;
+    }
+    if (downloadNativeApk(update.apkUrl, update.version)) {
+      showToast("Descargando el APK desde GitHub.", { type: "info", icon: "download" });
+    } else {
+      showToast("No se pudo iniciar la descarga del APK.", { type: "error" });
+    }
     return;
   }
   if (!updater.downloadPackage(update)) {
@@ -1820,6 +2079,7 @@ function handleNotificationClick(reminderId) {
 }
 
 async function registerServiceWorker() {
+  if (nativeMode) return;
   if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
   try {
     const registration = await navigator.serviceWorker.register(new URL("sw.js", document.baseURI), {

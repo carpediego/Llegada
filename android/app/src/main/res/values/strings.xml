@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Llegada</string>
+    <string name="service_channel_name">Vigilancia de ubicación</string>
+    <string name="service_channel_description">Mantiene activas tus geocercas mientras Llegada está en segundo plano.</string>
+    <string name="alarm_channel_name">Alarmas de Llegada</string>
+    <string name="alarm_channel_description">Avisos de llegada y salida con sonido de alarma.</string>
+    <string name="service_title">Llegada está vigilando</string>
+    <string name="service_text">Tus recordatorios por ubicación están activos.</string>
+    <string name="service_stop">Detener</string>
+    <string name="alarm_default_title">Recordatorio de Llegada</string>
+</resources>
