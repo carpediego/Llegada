@@ -3173,6 +3173,8 @@ dialog::backdrop {
   font-size: clamp(38px, 6vw, 54px);
   line-height: 1.02;
   letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .alarm-place {
@@ -3636,9 +3638,12 @@ dialog::backdrop {
   }
 
   .sheet {
+    position: fixed;
+    inset: 0;
     width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: 100%;
+    max-width: none;
+    max-height: none;
     border-radius: 0;
     margin: 0;
   }
@@ -3738,7 +3743,8 @@ dialog::backdrop {
   .info-dialog,
   .settings-dialog {
     width: 100vw;
-    max-height: 92dvh;
+    height: 100%;
+    max-height: none;
   }
 
   .settings-actions {

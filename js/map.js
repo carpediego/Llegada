@@ -74,7 +74,7 @@ export class DashboardMap {
       );
 
       const select = (event) => {
-        L.DomEvent.stopPropagation(event);
+        if (event?.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
         this.selectedId = reminder.id;
         this.onSelect(reminder.id);
       };

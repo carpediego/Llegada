@@ -860,6 +860,7 @@ function updateAlarmClock() {
 
 function handlePosition(position) {
   if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return;
+  ui.trackerPermission = "granted";
   state.lastPosition = position;
   for (const reminder of state.reminders) {
     ui.distances.set(
@@ -1032,6 +1033,7 @@ function handleTrackerError(error, code) {
   ui.trackerStatus = "error";
   if (code === "denied") {
     state.settings.trackingEnabled = false;
+    ui.trackerPermission = "denied";
     saveState(state);
     releaseWakeLock();
     showToast("Permiso de ubicación denegado. Actívalo en los ajustes del navegador.", {
@@ -1199,9 +1201,6 @@ function setupPicker(reminder) {
       onChange: ({ lat, lng }) => {
         ui.pickerPoint = { lat, lng };
         updateCoordsLine();
-        if (!els.fieldPlace.value.trim()) {
-          els.fieldPlace.value = "Mi ubicación";
-        }
       }
     });
     if (!ui.pickerPoint) {
@@ -1248,10 +1247,11 @@ function updateDelayUI() {
   els.delayCustomWrap.hidden = isPreset || value === 0;
   els.delayPresets.querySelectorAll(".delay-chip").forEach((chip) => {
     const chipValue = chip.dataset.delay;
-    chip.classList.toggle(
-      "is-active",
-      chipValue !== "custom" && Number(chipValue) === value
-    );
+    const active =
+      chipValue === "custom"
+        ? !isPreset && value > 0
+        : Number(chipValue) === value;
+    chip.classList.toggle("is-active", active);
   });
   els.requireStayRow.hidden = trigger === "exit" || value === 0;
 

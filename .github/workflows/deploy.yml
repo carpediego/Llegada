@@ -46,6 +46,7 @@ jobs:
           ZIP="dist/downloads/llegada-$TAG.zip"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ZIP" --clobber
+            gh release edit "$TAG" --title "Llegada $TAG" --notes-file dist/release-notes.md
           else
             gh release create "$TAG" "$ZIP" \
               --title "Llegada $TAG" \
